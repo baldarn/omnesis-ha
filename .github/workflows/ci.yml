@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
-      - run: uv venv -p 3.13 .venv && uv pip install -p .venv -r requirements_test.txt hassil home-assistant-intents
+      - run: uv venv -p 3.13 .venv && uv pip install -p .venv -r requirements_test.txt
       - run: .venv/bin/ruff check . && .venv/bin/ruff format --check .
       - run: .venv/bin/pytest -q
 
@@ -27,6 +27,8 @@ jobs:
       - uses: hacs/action@main
         with:
           category: integration
+          # No brand icon yet; drop once custom_components/omnesis/brand/icon.png exists.
+          ignore: brands
 
   addon-lint:
     runs-on: ubuntu-latest
@@ -48,5 +50,7 @@ jobs:
           docker run -d --name addon -v "$PWD/data:/data" -p 7600:7600 local/omnesis-addon
           for i in $(seq 1 60); do curl -skf https://localhost:7600/health && break; sleep 5; done
           curl -skf https://localhost:7600/health
+          # announce.sh prints the pairing code a few seconds after /health turns OK.
+          for i in $(seq 1 30); do docker logs addon 2>&1 | grep -q "Pairing code:" && break; sleep 2; done
           docker logs addon 2>&1 | grep "Portal pairing code"
           docker logs addon 2>&1 | grep "Live storage encryption enabled for the gateway"

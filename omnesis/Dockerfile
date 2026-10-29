@@ -16,6 +16,9 @@ ENV OMNESIS_CONFIG_DIR=/data/omnesis \
 RUN printf '#!/bin/sh\n[ "$(id -u)" = 0 ] && exec setpriv --reuid=10001 --regid=10001 --clear-groups node /app/packages/cli/dist/index.js "$@"\nexec node /app/packages/cli/dist/index.js "$@"\n' > /usr/local/bin/omnesis \
     && chmod 0555 /usr/local/bin/omnesis
 
+HEALTHCHECK --interval=30s --timeout=10s --start-period=120s \
+    CMD curl --fail --insecure --silent https://127.0.0.1:7600/health >/dev/null || exit 1
+
 COPY --chmod=0555 run.sh /run.sh
 COPY --chmod=0555 announce.sh /announce.sh
 
