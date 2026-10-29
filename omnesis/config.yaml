@@ -1,0 +1,26 @@
+name: Omnesis
+version: "0.7.0"
+slug: omnesis
+description: Index, search, and reason about your entire digital life, on your Home Assistant server.
+url: https://github.com/baldarn/omnesis-ha/tree/main/omnesis
+arch:
+  - aarch64
+  - amd64
+startup: application
+boot: auto
+init: false
+ports:
+  7600/tcp: 7600
+ports_description:
+  7600/tcp: Omnesis gateway (HTTPS) — portal, apps, MCP and /answer
+webui: https://[HOST]:[PORT:7600]/portal/
+watchdog: tcp://[HOST]:[PORT:7600]
+timeout: 120
+options:
+  passphrase: ""
+  tls_extra_names: ""
+  log_portal_pairing_code: true
+schema:
+  passphrase: password
+  tls_extra_names: str?
+  log_portal_pairing_code: bool

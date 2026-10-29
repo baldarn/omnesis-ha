@@ -1,0 +1,109 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to Omnesis",
+        "description": "Address of your Omnesis gateway. With the Omnesis add-on on this server, keep the default.",
+        "data": {
+          "url": "Gateway URL"
+        },
+        "data_description": {
+          "url": "The gateway's https address and port (7600 unless you changed it), or a Tailscale name."
+        }
+      },
+      "certificate": {
+        "title": "Trust the gateway's certificate",
+        "description": "The gateway at {url} uses a self-signed certificate with this SHA-256 fingerprint:\n\n`{fingerprint}`\n\nCompare it with the gateway's own: the Omnesis add-on prints it in its log at start, and `omnesis tls status` shows it as `fingerprintSha256`. Submit only if they match: Home Assistant will trust this certificate alone."
+      },
+      "pair": {
+        "title": "Pair Home Assistant",
+        "description": "In the Omnesis portal open **Settings → Devices → Pair device**, choose kind **Integration**, name it `Home Assistant` and pick the access level its answers may use. Paste the code here.",
+        "data": {
+          "pairing_code": "Pairing code"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Reconnect to Omnesis",
+        "description": "Home Assistant could not use its connection to {url}. If the certificate fingerprint below is new, check it against the gateway's before you continue:\n\n`{fingerprint}`\n\nIf Home Assistant's device was revoked, pair again and paste a new integration code; otherwise leave the code empty.",
+        "data": {
+          "pairing_code": "Pairing code"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Cannot reach the gateway at this address.",
+      "not_omnesis": "Something answered at this address, but it is not an Omnesis gateway.",
+      "invalid_url": "Enter the gateway's https address and port.",
+      "insecure_url": "Use https; plain http is only allowed for this machine.",
+      "invalid_pairing_code": "The code was refused. It may be mistyped, already used, expired (codes last 10 minutes), or not an Integration code.",
+      "token_refused": "The gateway refused Home Assistant's token. Pair again with a new code.",
+      "certificate_changed": "The gateway's certificate changed during setup. Start again.",
+      "unknown": "Unexpected error; see the logs."
+    },
+    "abort": {
+      "already_configured": "This gateway is already configured.",
+      "reauth_successful": "Reconnected to Omnesis."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "answer_timeout": "Answer time limit"
+        },
+        "data_description": {
+          "answer_timeout": "How long one question may take, retries included. Voice satellites may give up sooner."
+        }
+      }
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "gateway": {
+        "name": "Gateway"
+      }
+    }
+  },
+  "services": {
+    "ask": {
+      "name": "Ask",
+      "description": "Asks Omnesis a question and returns its answer.",
+      "fields": {
+        "question": {
+          "name": "Question",
+          "description": "What to ask."
+        },
+        "config_entry_id": {
+          "name": "Gateway",
+          "description": "Which Omnesis gateway to ask, when more than one is set up."
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "token_refused": {
+      "message": "The gateway refused Home Assistant's token; reconfigure the Omnesis integration."
+    },
+    "certificate_changed": {
+      "message": "The gateway's certificate changed; reconfigure the Omnesis integration to trust the new one."
+    },
+    "gateway_unreachable": {
+      "message": "Cannot reach the Omnesis gateway ({error})."
+    },
+    "gateway_refused": {
+      "message": "Omnesis refused the question: {error}"
+    },
+    "answer_timeout": {
+      "message": "Omnesis did not answer within {seconds} seconds."
+    },
+    "invalid_response": {
+      "message": "Omnesis answered in a form this integration does not understand."
+    },
+    "no_loaded_entry": {
+      "message": "No Omnesis gateway is set up and running."
+    },
+    "entry_required": {
+      "message": "More than one Omnesis gateway is set up; choose one."
+    }
+  }
+}

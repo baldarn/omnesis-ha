@@ -1,0 +1,8 @@
+build_from:
+  aarch64: ghcr.io/omnesis-dev/omnesis-combined:0.7.0
+  amd64: ghcr.io/omnesis-dev/omnesis-combined:0.7.0
+labels:
+  org.opencontainers.image.title: Omnesis
+  org.opencontainers.image.description: Omnesis gateway and collector for Home Assistant
+  org.opencontainers.image.source: https://github.com/baldarn/omnesis-ha
+  org.opencontainers.image.licenses: AGPL-3.0-or-later

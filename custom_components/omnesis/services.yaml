@@ -1,0 +1,13 @@
+ask:
+  fields:
+    question:
+      required: true
+      example: "When is my next dentist appointment?"
+      selector:
+        text:
+          multiline: true
+    config_entry_id:
+      required: false
+      selector:
+        config_entry:
+          integration: omnesis

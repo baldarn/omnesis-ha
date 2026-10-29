@@ -1,0 +1,109 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Collega Omnesis",
+        "description": "Indirizzo del gateway Omnesis. Se l'add-on Omnesis gira su questo server, lascia il valore predefinito.",
+        "data": {
+          "url": "URL del gateway"
+        },
+        "data_description": {
+          "url": "L'indirizzo https e la porta del gateway (7600 se non l'hai cambiata), oppure un nome Tailscale."
+        }
+      },
+      "certificate": {
+        "title": "Conferma il certificato del gateway",
+        "description": "Il gateway su {url} usa un certificato autofirmato con questa impronta SHA-256:\n\n`{fingerprint}`\n\nConfrontala con quella del gateway: l'add-on Omnesis la stampa nel log all'avvio, e `omnesis tls status` la mostra come `fingerprintSha256`. Conferma solo se coincidono: Home Assistant si fiderà soltanto di questo certificato."
+      },
+      "pair": {
+        "title": "Abbina Home Assistant",
+        "description": "Nel portale di Omnesis apri **Settings → Devices → Pair device**, scegli il tipo **Integration**, chiamalo `Home Assistant` e scegli il livello di accesso che le sue risposte possono usare. Incolla qui il codice.",
+        "data": {
+          "pairing_code": "Codice di abbinamento"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Ricollega Omnesis",
+        "description": "Home Assistant non riesce più a usare la connessione con {url}. Se l'impronta del certificato qui sotto è nuova, confrontala con quella del gateway prima di continuare:\n\n`{fingerprint}`\n\nSe il dispositivo di Home Assistant è stato revocato, abbinalo di nuovo e incolla un nuovo codice Integration; altrimenti lascia il codice vuoto.",
+        "data": {
+          "pairing_code": "Codice di abbinamento"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Il gateway non è raggiungibile a questo indirizzo.",
+      "not_omnesis": "A questo indirizzo risponde qualcosa, ma non è un gateway Omnesis.",
+      "invalid_url": "Inserisci l'indirizzo https e la porta del gateway.",
+      "insecure_url": "Usa https: http in chiaro è ammesso solo per questa macchina.",
+      "invalid_pairing_code": "Codice rifiutato: forse è sbagliato, già usato, scaduto (dura 10 minuti) o non è un codice Integration.",
+      "token_refused": "Il gateway ha rifiutato il token di Home Assistant. Abbina di nuovo con un nuovo codice.",
+      "certificate_changed": "Il certificato del gateway è cambiato durante la configurazione. Ricomincia.",
+      "unknown": "Errore imprevisto; controlla i log."
+    },
+    "abort": {
+      "already_configured": "Questo gateway è già configurato.",
+      "reauth_successful": "Omnesis ricollegato."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "answer_timeout": "Tempo massimo per una risposta"
+        },
+        "data_description": {
+          "answer_timeout": "Quanto può durare una domanda, tentativi compresi. I satelliti vocali potrebbero arrendersi prima."
+        }
+      }
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "gateway": {
+        "name": "Gateway"
+      }
+    }
+  },
+  "services": {
+    "ask": {
+      "name": "Chiedi",
+      "description": "Fa una domanda a Omnesis e restituisce la risposta.",
+      "fields": {
+        "question": {
+          "name": "Domanda",
+          "description": "Cosa chiedere."
+        },
+        "config_entry_id": {
+          "name": "Gateway",
+          "description": "Quale gateway Omnesis interrogare, se ce n'è più di uno."
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "token_refused": {
+      "message": "Il gateway ha rifiutato il token di Home Assistant; riconfigura l'integrazione Omnesis."
+    },
+    "certificate_changed": {
+      "message": "Il certificato del gateway è cambiato; riconfigura l'integrazione Omnesis per fidarti del nuovo."
+    },
+    "gateway_unreachable": {
+      "message": "Il gateway Omnesis non è raggiungibile ({error})."
+    },
+    "gateway_refused": {
+      "message": "Omnesis ha rifiutato la domanda: {error}"
+    },
+    "answer_timeout": {
+      "message": "Omnesis non ha risposto entro {seconds} secondi."
+    },
+    "invalid_response": {
+      "message": "Omnesis ha risposto in un formato che questa integrazione non riconosce."
+    },
+    "no_loaded_entry": {
+      "message": "Nessun gateway Omnesis configurato e attivo."
+    },
+    "entry_required": {
+      "message": "Ci sono più gateway Omnesis configurati; scegline uno."
+    }
+  }
+}

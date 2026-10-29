@@ -1,0 +1,18 @@
+configuration:
+  passphrase:
+    name: Passphrase
+    description: >-
+      Unlocks Omnesis's encryption at rest. Choose a long passphrase and keep a
+      copy somewhere safe: without it the data in this add-on cannot be read.
+  tls_extra_names:
+    name: Extra certificate names
+    description: >-
+      Comma-separated host names and IP addresses to add to the gateway's TLS
+      certificate, for example "homeassistant.local,192.168.1.10".
+  log_portal_pairing_code:
+    name: Print a portal pairing code at start
+    description: >-
+      Print a one-time code to the add-on log at every start, to sign in to the
+      portal without a shell.
+network:
+  7600/tcp: Omnesis gateway (HTTPS)
