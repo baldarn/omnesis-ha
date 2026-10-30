@@ -35,6 +35,10 @@ passphrase, start it, and follow [the add-on docs](omnesis/DOCS.md).
 4. **Settings → Voice assistants**: pick **Omnesis** as the conversation agent
    of an assistant.
 
+Omnesis answers only once it has an agent model: assign one with
+`omnesis model assign`, or set `inference.assignments.agent` in `omnesis.json`. Until then every question
+is refused with "Agent disabled".
+
 The integration holds a token with only the `answer` scope: it can ask
 questions and nothing else. Which sources answers may draw on, and whether a
 privacy reviewer checks them first, is the access level you chose, and you can
@@ -61,6 +65,16 @@ A self-signed gateway certificate is pinned by its SHA-256 fingerprint; a
 certificate the system already trusts (Tailscale, a public CA) is verified
 normally. If the gateway's certificate changes, the integration asks you to
 confirm the new one.
+
+### Revoked token
+
+If the gateway refuses the integration's token (the device was revoked, or the
+gateway's data was reset), Home Assistant asks you to reconfigure Omnesis. To
+bring the same device back, with its access level, run
+`omnesis devices repair <device id>` (in the add-on container:
+`docker exec <container> omnesis devices repair <device id>`; `omnesis devices
+list` shows the id) and paste the repair code it prints. A new pairing code
+from the portal works too, but creates a new device.
 
 ## Development
 
