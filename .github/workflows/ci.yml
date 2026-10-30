@@ -27,8 +27,6 @@ jobs:
       - uses: hacs/action@main
         with:
           category: integration
-          # No brand icon yet; drop once custom_components/omnesis/brand/icon.png exists.
-          ignore: brands
 
   addon-lint:
     runs-on: ubuntu-latest
