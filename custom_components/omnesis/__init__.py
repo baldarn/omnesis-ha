@@ -9,9 +9,14 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.typing import ConfigType
 
-from .api import CertificateError, InvalidAuth, OmnesisClient, OmnesisError
+from .api import AccessLevelRequired, CertificateError, InvalidAuth, OmnesisClient, OmnesisError
 from .const import CONF_FINGERPRINT, DOMAIN
 from .coordinator import OmnesisConfigEntry, OmnesisData, OmnesisHealthCoordinator
+from .issues import (
+    async_create_access_level_issue,
+    async_delete_access_level_issue,
+    portal_devices_url,
+)
 from .services import async_setup_services
 
 PLATFORMS = [Platform.BINARY_SENSOR, Platform.CONVERSATION]
@@ -41,6 +46,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: OmnesisConfigEntry) -> b
     client = client_for_entry(hass, entry)
     try:
         await client.async_check_auth()
+    except AccessLevelRequired as err:
+        # The token is good: wait for a level to be chosen, without reauth.
+        async_create_access_level_issue(hass, entry, err.code)
+        raise ConfigEntryNotReady(
+            translation_domain=DOMAIN,
+            translation_key=err.code.lower(),
+            translation_placeholders={"url": portal_devices_url(entry.data[CONF_URL])},
+        ) from err
     except InvalidAuth as err:
         raise ConfigEntryAuthFailed(
             translation_domain=DOMAIN, translation_key="token_refused"
@@ -56,6 +69,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: OmnesisConfigEntry) -> b
             translation_placeholders={"error": str(err) or type(err).__name__},
         ) from err
 
+    async_delete_access_level_issue(hass, entry)
+
     coordinator = OmnesisHealthCoordinator(hass, entry, client)
     await coordinator.async_config_entry_first_refresh()
     entry.runtime_data = OmnesisData(client=client, coordinator=coordinator)
@@ -67,3 +82,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: OmnesisConfigEntry) -> b
 async def async_unload_entry(hass: HomeAssistant, entry: OmnesisConfigEntry) -> bool:
     """Unload a config entry."""
     return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+
+
+async def async_remove_entry(hass: HomeAssistant, entry: OmnesisConfigEntry) -> None:
+    """Withdraw the entry's issues when it is removed."""
+    async_delete_access_level_issue(hass, entry)

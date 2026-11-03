@@ -23,6 +23,7 @@ from homeassistant.helpers.selector import (
 import voluptuous as vol
 
 from .api import (
+    AccessLevelRequired,
     CannotConnect,
     CertificateError,
     InvalidAuth,
@@ -43,6 +44,7 @@ from .const import (
     MIN_ANSWER_TIMEOUT,
 )
 from .coordinator import OmnesisConfigEntry
+from .issues import portal_devices_url
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -60,6 +62,8 @@ class OmnesisConfigFlow(ConfigFlow, domain=DOMAIN):
         self._url: str | None = None
         # Hex SHA-256 of the pinned certificate; None when the system's roots trust it.
         self._fingerprint: str | None = None
+        # A redeemed token waiting for its device's access level.
+        self._token: str | None = None
 
     def _client(self, token: str | None = None) -> OmnesisClient:
         assert self._url is not None
@@ -167,18 +171,49 @@ class OmnesisConfigFlow(ConfigFlow, domain=DOMAIN):
                 _LOGGER.exception("Unexpected answer while pairing with Omnesis")
                 errors["base"] = "unknown"
             else:
-                assert self._url is not None
-                return self.async_create_entry(
-                    title=f"Omnesis ({urlsplit(self._url).hostname})",
-                    data={
-                        CONF_URL: self._url,
-                        CONF_TOKEN: token,
-                        CONF_FINGERPRINT: self._fingerprint,
-                    },
-                )
+                # The code is used up now: keep the token whatever the probe says.
+                self._token = token
+                return await self.async_step_access_level()
         return self.async_show_form(
             step_id="pair",
             data_schema=vol.Schema({vol.Required(CONF_PAIRING_CODE): str}),
+            errors=errors,
+        )
+
+    async def async_step_access_level(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Wait until the paired device has an access level that can answer."""
+        assert self._url is not None and self._token is not None
+        errors: dict[str, str] = {}
+        # Probed on arrival too, so a device with a level goes straight through.
+        try:
+            await self._client(self._token).async_check_auth()
+        except AccessLevelRequired:
+            if user_input is not None:
+                errors["base"] = "access_level_required"
+        except InvalidAuth:
+            errors["base"] = "token_refused"
+        except CertificateError:
+            errors["base"] = "certificate_changed"
+        except CannotConnect:
+            errors["base"] = "cannot_connect"
+        except OmnesisError:
+            _LOGGER.exception("Unexpected answer while checking Omnesis access")
+            errors["base"] = "unknown"
+        else:
+            return self.async_create_entry(
+                title=f"Omnesis ({urlsplit(self._url).hostname})",
+                data={
+                    CONF_URL: self._url,
+                    CONF_TOKEN: self._token,
+                    CONF_FINGERPRINT: self._fingerprint,
+                },
+            )
+        return self.async_show_form(
+            step_id="access_level",
+            data_schema=vol.Schema({}),
+            description_placeholders={"portal_url": portal_devices_url(self._url)},
             errors=errors,
         )
 
@@ -206,6 +241,8 @@ class OmnesisConfigFlow(ConfigFlow, domain=DOMAIN):
                     await client.async_check_auth()
             except InvalidPairingCode:
                 errors[CONF_PAIRING_CODE] = "invalid_pairing_code"
+            except AccessLevelRequired:
+                errors["base"] = "access_level_required"
             except InvalidAuth:
                 errors[CONF_PAIRING_CODE] = "token_refused"
             except CertificateError:
@@ -226,6 +263,7 @@ class OmnesisConfigFlow(ConfigFlow, domain=DOMAIN):
         placeholders = {"url": self._url or "", "fingerprint": "—"}
         if self._fingerprint:
             placeholders = self._certificate_placeholders()
+        placeholders["portal_url"] = portal_devices_url(self._url or "")
         return self.async_show_form(
             step_id="reauth_confirm",
             data_schema=vol.Schema({vol.Optional(CONF_PAIRING_CODE): str}),

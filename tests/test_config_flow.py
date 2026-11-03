@@ -51,6 +51,7 @@ async def test_full_flow_with_pinned_certificate(
 
     aioclient_mock.get(f"{URL}/health", side_effect=health)
     aioclient_mock.post(f"{URL}/devices/pair", json={"token": TOKEN, "scopes": ["answer"]})
+    aioclient_mock.get(f"{URL}/answer/tasks/ha_auth_probe", status=404, json={"code": "NOT_FOUND"})
 
     result = await _start(hass)
     assert result["type"] is FlowResultType.FORM and result["step_id"] == "user"
@@ -77,6 +78,9 @@ async def test_trusted_certificate_skips_pinning(
     aioclient_mock.get("https://gw.ts.net:7600/health", json=HEALTH)
     aioclient_mock.post(
         "https://gw.ts.net:7600/devices/pair", json={"token": TOKEN, "scopes": ["answer"]}
+    )
+    aioclient_mock.get(
+        "https://gw.ts.net:7600/answer/tasks/ha_auth_probe", status=404, json={"code": "NOT_FOUND"}
     )
     result = await _start(hass)
     result = await hass.config_entries.flow.async_configure(
@@ -112,6 +116,39 @@ async def test_errors(hass: HomeAssistant, aioclient_mock: AiohttpClientMocker) 
         result["flow_id"], {CONF_PAIRING_CODE: "bad"}
     )
     assert result["errors"] == {CONF_PAIRING_CODE: "invalid_pairing_code"}
+
+
+async def test_pair_waits_for_access_level(
+    hass: HomeAssistant, aioclient_mock: AiohttpClientMocker
+) -> None:
+    base = "https://gw.ts.net:7600"
+    aioclient_mock.get(f"{base}/health", json=HEALTH)
+    aioclient_mock.post(f"{base}/devices/pair", json={"token": TOKEN, "scopes": ["answer"]})
+    probe = f"{base}/answer/tasks/ha_auth_probe"
+    no_level = {
+        "code": "ACCESS_LEVEL_REQUIRED",
+        "error": "This integration has no access level yet.",
+    }
+    aioclient_mock.get(probe, status=403, json=no_level)
+
+    result = await _start(hass)
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {CONF_URL: base})
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {CONF_PAIRING_CODE: "abc"}
+    )
+    assert result["step_id"] == "access_level"
+    assert result["errors"] == {}
+    assert result["description_placeholders"]["portal_url"] == f"{base}/portal/settings/devices"
+
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+    assert result["step_id"] == "access_level"
+    assert result["errors"] == {"base": "access_level_required"}
+
+    aioclient_mock.clear_requests()
+    aioclient_mock.get(probe, status=404, json={"code": "NOT_FOUND"})
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert result["data"][CONF_TOKEN] == TOKEN
 
 
 async def test_already_configured(hass: HomeAssistant, mock_entry: MockConfigEntry) -> None:

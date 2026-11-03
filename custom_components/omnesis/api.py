@@ -41,6 +41,9 @@ _PROXY_GAP_STATUSES = frozenset({502, 503, 504})
 _TRANSIENT_CODES = frozenset(
     {"ANSWER_IN_PROGRESS", "ANSWER_CAPACITY", "QUEUE_FULL", "SQLITE_READONLY"}
 )
+# Refusals that mean the token is fine but the device has no access level that
+# can answer: one must be chosen in the portal, not a new token.
+_ACCESS_LEVEL_CODES = frozenset({"ACCESS_LEVEL_REQUIRED", "ACCESS_LEVEL_UNAVAILABLE"})
 _CONVERSATION_ID = re.compile(r"^[A-Za-z0-9_:-]{1,128}$")
 
 _CERTIFICATE_ERRORS = (
@@ -68,6 +71,20 @@ class RequestTimeout(CannotConnect):
 
 class InvalidAuth(OmnesisError):
     """The token was refused: revoked, or never valid."""
+
+
+class AccessLevelRequired(OmnesisError):
+    """The token is good, but the device has no access level that can answer.
+
+    `code` is ACCESS_LEVEL_REQUIRED when none was chosen yet, and
+    ACCESS_LEVEL_UNAVAILABLE when the chosen one can no longer answer.
+    """
+
+    def __init__(self, code: str, detail: str) -> None:
+        """Initialize the error."""
+        super().__init__(detail)
+        self.code = code
+        self.detail = detail
 
 
 class InvalidPairingCode(OmnesisError):
@@ -229,16 +246,15 @@ class OmnesisClient:
             payload = json.loads(text) if text else None
         except ValueError:
             payload = None
+        envelope = payload if isinstance(payload, dict) else {}
+        code = envelope.get("code")
+        code = code if isinstance(code, str) else None
+        if status == 403 and code in _ACCESS_LEVEL_CODES:
+            raise AccessLevelRequired(code, _error_detail(payload, "no access level"))
         if status in (401, 403):
             raise InvalidAuth(_error_detail(payload, "Unauthorized"))
         if status >= 400:
-            envelope = payload if isinstance(payload, dict) else {}
-            code = envelope.get("code")
-            raise GatewayError(
-                status,
-                code if isinstance(code, str) else None,
-                _error_detail(payload, "no detail given"),
-            )
+            raise GatewayError(status, code, _error_detail(payload, "no detail given"))
         return status, payload
 
     async def async_health(self) -> dict[str, Any]:
@@ -273,6 +289,8 @@ class OmnesisClient:
 
         Polling a task that does not exist needs only the answer scope and
         creates nothing; any refusal other than 401/403 means the token is good.
+        Raise AccessLevelRequired if the token is good but the device has no
+        access level that can answer.
         """
         try:
             await self._request("GET", "/answer/tasks/ha_auth_probe")

@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+from homeassistant.const import CONF_URL
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 
 from .api import (
+    AccessLevelRequired,
     Answer,
     AnswerTimeout,
     CannotConnect,
@@ -16,6 +18,11 @@ from .api import (
 )
 from .const import CONF_ANSWER_TIMEOUT, DEFAULT_ANSWER_TIMEOUT, DOMAIN
 from .coordinator import OmnesisConfigEntry
+from .issues import (
+    async_create_access_level_issue,
+    async_delete_access_level_issue,
+    portal_devices_url,
+)
 
 
 async def async_ask(
@@ -28,9 +35,13 @@ async def async_ask(
     data = entry.runtime_data
     budget = entry.options.get(CONF_ANSWER_TIMEOUT, DEFAULT_ANSWER_TIMEOUT)
     try:
-        return await data.client.async_answer(
+        answer = await data.client.async_answer(
             question, budget=budget, conversation_id=conversation_id
         )
+    except AccessLevelRequired as err:
+        # The token is good; a level must be chosen in the portal, not a new token.
+        async_create_access_level_issue(hass, entry, err.code)
+        raise _error(err.code.lower(), url=portal_devices_url(entry.data[CONF_URL])) from err
     except InvalidAuth as err:
         entry.async_start_reauth(hass)
         raise _error("token_refused") from err
@@ -45,6 +56,8 @@ async def async_ask(
         raise _error("gateway_refused", error=err.detail) from err
     except InvalidResponse as err:
         raise _error("invalid_response") from err
+    async_delete_access_level_issue(hass, entry)
+    return answer
 
 
 def _error(key: str, **placeholders: str) -> HomeAssistantError:

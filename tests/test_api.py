@@ -7,6 +7,7 @@ from aioresponses import aioresponses
 import pytest
 
 from custom_components.omnesis.api import (
+    AccessLevelRequired,
     AnswerTimeout,
     CannotConnect,
     GatewayError,
@@ -212,5 +213,38 @@ async def test_check_auth(client: OmnesisClient) -> None:
         mocked.get(
             f"{URL}/answer/tasks/ha_auth_probe", status=401, payload={"code": "UNAUTHORIZED"}
         )
+        with pytest.raises(InvalidAuth):
+            await client.async_check_auth()
+
+
+ACCESS_LEVEL_CODES = ["ACCESS_LEVEL_REQUIRED", "ACCESS_LEVEL_UNAVAILABLE"]
+
+
+@pytest.mark.parametrize("code", ACCESS_LEVEL_CODES)
+async def test_check_auth_access_level(client: OmnesisClient, code: str) -> None:
+    with aioresponses() as mocked:
+        mocked.get(
+            f"{URL}/answer/tasks/ha_auth_probe",
+            status=403,
+            payload={"code": code, "error": "Choose one on the portal's Devices page."},
+        )
+        with pytest.raises(AccessLevelRequired) as err:
+            await client.async_check_auth()
+    assert err.value.code == code
+
+
+@pytest.mark.parametrize("code", ACCESS_LEVEL_CODES)
+async def test_answer_access_level_is_final(client: OmnesisClient, code: str) -> None:
+    with aioresponses() as mocked:
+        mocked.post(f"{URL}/answer", status=403, payload={"code": code, "error": "x"}, repeat=True)
+        with pytest.raises(AccessLevelRequired) as err:
+            await client.async_answer("q", budget=5)
+    assert err.value.code == code
+    assert len(_bodies(mocked, "/answer")) == 1
+
+
+async def test_other_forbidden_is_invalid_auth(client: OmnesisClient) -> None:
+    with aioresponses() as mocked:
+        mocked.get(f"{URL}/answer/tasks/ha_auth_probe", status=403, payload={"code": "FORBIDDEN"})
         with pytest.raises(InvalidAuth):
             await client.async_check_auth()

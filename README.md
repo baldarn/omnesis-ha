@@ -31,9 +31,15 @@ passphrase, start it, and follow [the add-on docs](omnesis/DOCS.md).
    then pick the level on the device's card.)
 3. **Settings → Devices & services → Add integration → Omnesis**. With the
    add-on, keep `https://127.0.0.1:7600`. Compare the certificate fingerprint
-   with the one in the add-on log, then paste the pairing code.
+   with the one in the add-on log, then paste the pairing code. If the device
+   has no access level yet, setup waits for you to pick one on its card.
 4. **Settings → Voice assistants**: pick **Omnesis** as the conversation agent
    of an assistant.
+
+If the device later has no access level that can answer (none chosen, or the
+chosen one can no longer answer), Home Assistant shows a **Repairs** issue
+linking to the portal's **Settings → Devices**. Pick a level there, and Home
+Assistant reconnects by itself. No new pairing code is needed.
 
 Omnesis answers only once it has an agent model: assign one with
 `omnesis model assign`, or set `inference.assignments.agent` in `omnesis.json`. Until then every question

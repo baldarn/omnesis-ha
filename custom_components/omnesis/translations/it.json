@@ -22,6 +22,10 @@
           "pairing_code": "Codice di abbinamento"
         }
       },
+      "access_level": {
+        "title": "Scegli un livello di accesso",
+        "description": "Home Assistant è abbinato, ma il suo dispositivo non ha ancora un livello di accesso, quindi Omnesis non può rispondergli. Nel portale di Omnesis apri **Settings → Devices** ({portal_url}), scegli il livello di accesso sulla scheda del dispositivo Home Assistant e poi conferma."
+      },
       "reauth_confirm": {
         "title": "Ricollega Omnesis",
         "description": "Home Assistant non riesce più a usare la connessione con {url}. Se l'impronta del certificato qui sotto è nuova, confrontala con quella del gateway prima di continuare:\n\n`{fingerprint}`\n\nSe il dispositivo di Home Assistant è stato revocato, abbinalo di nuovo e incolla un nuovo codice Integration; altrimenti lascia il codice vuoto.",
@@ -38,7 +42,8 @@
       "invalid_pairing_code": "Codice rifiutato: forse è sbagliato, già usato, scaduto (dura 10 minuti) o non è un codice Integration.",
       "token_refused": "Il gateway ha rifiutato il token di Home Assistant. Abbina di nuovo con un nuovo codice.",
       "certificate_changed": "Il certificato del gateway è cambiato durante la configurazione. Ricomincia.",
-      "unknown": "Errore imprevisto; controlla i log."
+      "unknown": "Errore imprevisto; controlla i log.",
+      "access_level_required": "Il dispositivo di Home Assistant non ha ancora un livello di accesso che possa rispondere. Sceglilo nel portale di Omnesis: Settings → Devices ({portal_url})."
     },
     "abort": {
       "already_configured": "Questo gateway è già configurato.",
@@ -104,6 +109,22 @@
     },
     "entry_required": {
       "message": "Ci sono più gateway Omnesis configurati; scegline uno."
+    },
+    "access_level_required": {
+      "message": "Scegli un livello di accesso per il dispositivo Home Assistant nel portale di Omnesis: Settings → Devices ({url})."
+    },
+    "access_level_unavailable": {
+      "message": "Il livello di accesso scelto per Home Assistant non può più rispondere; scegline un altro nel portale di Omnesis: Settings → Devices ({url})."
+    }
+  },
+  "issues": {
+    "access_level_required": {
+      "title": "Omnesis richiede un livello di accesso per Home Assistant",
+      "description": "{title} è abbinato, ma il suo dispositivo non ha ancora un livello di accesso, quindi Omnesis non risponde. Apri il portale di Omnesis in **Settings → Devices** ({url}) e scegli il livello di accesso sulla scheda del dispositivo Home Assistant. Home Assistant si ricollega da solo; non serve un nuovo codice di abbinamento."
+    },
+    "access_level_unavailable": {
+      "title": "Il livello di accesso di Home Assistant in Omnesis non può rispondere",
+      "description": "Il livello di accesso scelto per il dispositivo Home Assistant di {title} non può più rispondere. Apri il portale di Omnesis in **Settings → Devices** ({url}) e scegline un altro sulla scheda del dispositivo. Home Assistant si ricollega da solo; non serve un nuovo codice di abbinamento."
     }
   }
 }

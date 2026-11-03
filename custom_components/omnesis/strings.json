@@ -22,6 +22,10 @@
           "pairing_code": "Pairing code"
         }
       },
+      "access_level": {
+        "title": "Choose an access level",
+        "description": "Home Assistant is paired, but its device has no access level yet, so Omnesis cannot answer it. In the Omnesis portal open **Settings → Devices** ({portal_url}), pick the access level on the Home Assistant device's card, then submit."
+      },
       "reauth_confirm": {
         "title": "Reconnect to Omnesis",
         "description": "Home Assistant could not use its connection to {url}. If the certificate fingerprint below is new, check it against the gateway's before you continue:\n\n`{fingerprint}`\n\nIf Home Assistant's device was revoked, pair again and paste a new integration code; otherwise leave the code empty.",
@@ -38,7 +42,8 @@
       "invalid_pairing_code": "The code was refused. It may be mistyped, already used, expired (codes last 10 minutes), or not an Integration code.",
       "token_refused": "The gateway refused Home Assistant's token. Pair again with a new code.",
       "certificate_changed": "The gateway's certificate changed during setup. Start again.",
-      "unknown": "Unexpected error; see the logs."
+      "unknown": "Unexpected error; see the logs.",
+      "access_level_required": "Home Assistant's device still has no access level that can answer. Choose one in the Omnesis portal: Settings → Devices ({portal_url})."
     },
     "abort": {
       "already_configured": "This gateway is already configured.",
@@ -104,6 +109,22 @@
     },
     "entry_required": {
       "message": "More than one Omnesis gateway is set up; choose one."
+    },
+    "access_level_required": {
+      "message": "Choose an access level for the Home Assistant device in the Omnesis portal: Settings → Devices ({url})."
+    },
+    "access_level_unavailable": {
+      "message": "The access level chosen for Home Assistant can no longer answer; choose another one in the Omnesis portal: Settings → Devices ({url})."
+    }
+  },
+  "issues": {
+    "access_level_required": {
+      "title": "Omnesis needs an access level for Home Assistant",
+      "description": "{title} is paired, but its device has no access level yet, so Omnesis refuses to answer. Open the Omnesis portal at **Settings → Devices** ({url}) and pick the access level on the Home Assistant device's card. Home Assistant reconnects by itself; no new pairing code is needed."
+    },
+    "access_level_unavailable": {
+      "title": "Omnesis access level for Home Assistant cannot answer",
+      "description": "The access level chosen for {title}'s Home Assistant device can no longer answer. Open the Omnesis portal at **Settings → Devices** ({url}) and choose another level on the device's card. Home Assistant reconnects by itself; no new pairing code is needed."
     }
   }
 }
